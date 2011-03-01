@@ -1,27 +1,27 @@
 module CouchRest
   module Mixins
     module DocumentQueries
-      
+
       def self.included(base)
         base.extend(ClassMethods)
       end
-      
+
       module ClassMethods
-        
+
         # Load all documents that have the "couchrest-type" field equal to the
         # name of the current class. Take the standard set of
         # CouchRest::Database#view options.
         def all(opts = {}, &block)
           view(:all, opts, &block)
         end
-        
+
         # Returns the number of documents that have the "couchrest-type" field
-        # equal to the name of the current class. Takes the standard set of 
+        # equal to the name of the current class. Takes the standard set of
         # CouchRest::Database#view options
         def count(opts = {}, &block)
           all({:raw => true, :limit => 0}.merge(opts), &block)['total_rows']
         end
-        
+
         # Load the first document that have the "couchrest-type" field equal to
         # the name of the current class.
         #
@@ -37,7 +37,7 @@ module CouchRest
           first_instance = self.all(opts.merge!(:limit => 1))
           first_instance.empty? ? nil : first_instance.first
         end
-        
+
         # Load a document from the database by id
         # No exceptions will be raised if the document isn't found
         #
@@ -45,7 +45,7 @@ module CouchRest
         # Object:: if the document was found
         # or
         # Nil::
-        # 
+        #
         # === Parameters
         # id<String, Integer>:: Document ID
         # db<Database>:: optional option to pass a custom database to use
@@ -57,7 +57,7 @@ module CouchRest
           end
         end
         alias :find :get
-        
+
         # Load a document from the database by id
         # An exception will be raised if the document isn't found
         #
@@ -65,7 +65,7 @@ module CouchRest
         # Object:: if the document was found
         # or
         # Exception
-        # 
+        #
         # === Parameters
         # id<String, Integer>:: Document ID
         # db<Database>:: optional option to pass a custom database to use
@@ -74,9 +74,27 @@ module CouchRest
           create_from_database(doc)
         end
         alias :find! :get!
-        
+
+        # Load one or more documents from the database by id, in a single
+        # request
+        #
+        # ==== Returns
+        # An array of Object:: for the requested documents. If the
+        # document could not be found, nil will be returned in its place.
+        #
+        # === Parameters
+        # ids<Array>:: An array of document ids
+        # db<Database>:: optional option to pass a custom database to use
+        def get_bulk(ids, db = database)
+          docs = []
+          result = db.get_bulk ids
+          result['rows'].each do |row|
+            docs << (row['doc'].nil? ? nil : create_from_database(row['doc']))
+          end
+          docs
+        end
       end
-      
+
     end
   end
 end
