@@ -4,14 +4,14 @@ require File.join(File.dirname(__FILE__), "validation")
 require File.join(File.dirname(__FILE__), 'mixins')
 
 module CouchRest
-  
+
   # Same as CouchRest::Document but with properties and validations
   class ExtendedDocument < Document
 
     VERSION = "1.0.0"
 
     include CouchRest::Mixins::Callbacks
-    include CouchRest::Mixins::DocumentQueries    
+    include CouchRest::Mixins::DocumentQueries
     include CouchRest::Mixins::Views
     include CouchRest::Mixins::DesignDoc
     include CouchRest::Mixins::ExtendedAttachments
@@ -26,7 +26,7 @@ module CouchRest
     def self.subclasses
       @subclasses ||= []
     end
-    
+
     def self.inherited(subklass)
       super
       subklass.send(:include, CouchRest::Mixins::Properties)
@@ -38,10 +38,10 @@ module CouchRest
       EOS
       subclasses << subklass
     end
-    
+
     # Accessors
     attr_accessor :casted_by
-    
+
     # Callbacks
     define_callbacks :create, "result == :halt"
     define_callbacks :save, "result == :halt"
@@ -54,16 +54,15 @@ module CouchRest
     # ==== Returns
     #  a document instance
     def self.create_from_database(doc = {})
-      base = (doc['couchrest-type'].blank? || doc['couchrest-type'] == self.to_s) ? self : doc['couchrest-type'].constantize
-      base.new(doc, :directly_set_attributes => true)      
+      new(doc, :directly_set_attributes => true)
     end
-    
+
 
     # Instantiate a new ExtendedDocument by preparing all properties
     # using the provided document hash.
     #
     # Options supported:
-    # 
+    #
     # * :directly_set_attributes: true when data comes directly from database
     #
     def initialize(doc = {}, options = {})
@@ -74,9 +73,9 @@ module CouchRest
       end
       after_initialize if respond_to?(:after_initialize)
     end
-    
-    # Defines an instance and save it directly to the database 
-    # 
+
+    # Defines an instance and save it directly to the database
+    #
     # ==== Returns
     #  returns the reloaded document
     def self.create(options)
@@ -84,9 +83,9 @@ module CouchRest
       instance.create
       instance
     end
-    
-    # Defines an instance and save it directly to the database 
-    # 
+
+    # Defines an instance and save it directly to the database
+    #
     # ==== Returns
     #  returns the reloaded document or raises an exception
     def self.create!(options)
@@ -94,7 +93,7 @@ module CouchRest
       instance.create!
       instance
     end
-    
+
     # Automatically set <tt>updated_at</tt> and <tt>created_at</tt> fields
     # on the document whenever saving occurs. CouchRest uses a pretty
     # decent time format by default. See Time#to_json
@@ -102,14 +101,14 @@ module CouchRest
       class_eval <<-EOS, __FILE__, __LINE__
         property(:updated_at, Time, :read_only => true, :protected => true, :auto_validation => false)
         property(:created_at, Time, :read_only => true, :protected => true, :auto_validation => false)
-        
+
         set_callback :save, :before do |object|
           write_attribute('updated_at', Time.now)
           write_attribute('created_at', Time.now) if object.new?
         end
       EOS
     end
-    
+
     # Name a method that will be called before the document is first saved,
     # which returns a string to be used for the document's <tt>_id</tt>.
     # Because CouchDB enforces a constraint that each id must be unique,
@@ -130,7 +129,7 @@ module CouchRest
         end
       end
     end
-    
+
     # Temp solution to make the view_by methods available
     def self.method_missing(m, *args, &block)
       if has_view?(m)
@@ -145,9 +144,9 @@ module CouchRest
       end
       super
     end
-    
+
     ### instance methods
-    
+
     # Gets a reference to the actual document in the DB
     # Calls up to the next document if there is one,
     # Otherwise we're at the top and we return self
@@ -155,16 +154,16 @@ module CouchRest
       return self if base_doc?
       @casted_by.base_doc
     end
-    
+
     # Checks if we're the top document
     def base_doc?
       !@casted_by
     end
-    
+
     # for compatibility with old-school frameworks
     alias :new_record? :new?
     alias :new_document? :new?
-    
+
     # Trigger the callbacks (before, after, around)
     # and create the document
     # It's important to have a create callback since you can't check if a document
@@ -180,7 +179,7 @@ module CouchRest
         end
       end
     end
-    
+
     # unlike save, create returns the newly created document
     def create_without_callbacks(bulk =false)
       raise ArgumentError, "a document requires a database to be created to (The document or the #{self.class} default database were not set)" unless database
@@ -188,13 +187,13 @@ module CouchRest
       result = database.save_doc(self, bulk)
       (result["ok"] == true) ? self : false
     end
-    
+
     # Creates the document in the db. Raises an exception
     # if the document is not created properly.
     def create!
       raise "#{self.inspect} failed to save" unless self.create
     end
-    
+
     # Trigger the callbacks (before, after, around)
     # only if the document isn't new
     def update(bulk = false)
@@ -210,7 +209,7 @@ module CouchRest
         end
       end
     end
-    
+
     # Trigger the callbacks (before, after, around)
     # and save the document
     def save(bulk = false)
@@ -224,7 +223,7 @@ module CouchRest
         end
       end
     end
-    
+
     # Overridden to set the unique ID.
     # Returns a boolean value
     def save_without_callbacks(bulk = false)
@@ -233,7 +232,7 @@ module CouchRest
       result = database.save_doc(self, bulk)
       result["ok"] == true
     end
-    
+
     # Saves the document to the db using save. Raises an exception
     # if the document is not saved properly.
     def save!
@@ -256,6 +255,6 @@ module CouchRest
         end
       end
     end
-  
+
   end
 end
